@@ -1,0 +1,94 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  password     String
+  name         String?
+  pdfDocuments PDFDocument[]
+  chatSessions ChatSession[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model PDFDocument {
+  id            String          @id @default(uuid())
+  userId        String
+  filename      String
+  originalName  String
+  filePath      String
+  fileSize      Int
+  pages         Int?
+  status        DocumentStatus  @default(PROCESSING)
+  vectorStoreId String?
+  chatSessions  ChatSession[]
+  chunks        DocumentChunk[] // ✅ ADD THIS
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+enum DocumentStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model DocumentChunk {
+  id         String                      @id @default(uuid())
+  pdfId      String
+  pageNumber Int
+  content    String
+  embedding  Unsupported("vector(768)")?
+  metadata   Json?
+  createdAt  DateTime                    @default(now())
+
+  pdfDocument PDFDocument @relation(fields: [pdfId], references: [id])
+
+  @@index([pdfId])
+}
+
+model ChatSession {
+  id        String        @id @default(uuid())
+  userId    String
+  pdfId     String?
+  title     String
+  messages  ChatMessage[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  user User         @relation(fields: [userId], references: [id])
+  pdf  PDFDocument? @relation(fields: [pdfId], references: [id])
+
+  @@index([userId])
+}
+
+model ChatMessage {
+  id        String      @id @default(uuid())
+  sessionId String
+  role      MessageRole
+  content   String
+  metadata  Json?
+  createdAt DateTime    @default(now())
+
+  session ChatSession @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId])
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}

@@ -1,0 +1,21 @@
+node_modules/
+.env
+dist/
+logs/
+*.log
+coverage/
+.DS_Store
+.vscode/
+.idea/
+npm-debug.log*
+
+/build/
+.cache/
+*.tsbuildinfo
+uploads/
+secrets.json
+temp/
+*.local
+
+
+# Ignore OS generated files
